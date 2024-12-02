@@ -1,0 +1,12 @@
+{
+    "name": "apna-payment/settlement-sdk",
+    "description": "A simple PHP SDK for settlements",
+    "autoload": {
+        "psr-4": {
+            "ApnaPayment\\Settlements\\": "src/"
+        }
+    },
+    "require": {
+        "guzzlehttp/guzzle": "^7.0"
+    }
+}
