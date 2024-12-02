@@ -15,7 +15,14 @@
     },
     "autoload": {
         "psr-4": {
-            "ApnaPayment\\Settlements\\": "src/"
+            "ApnaPayment\\Settlements\\": "src/Settlements"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ApnaPayment\\Settlements\\SettlementServiceProvider"
+            ]
         }
     }
 }

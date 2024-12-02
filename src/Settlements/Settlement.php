@@ -3,6 +3,13 @@ namespace ApnaPayment\Settlements;
 
 use ApnaPayment\Settlements\Builders\SettlementAccountBuilder;
 use ApnaPayment\Settlements\Builders\SettlementBuilder;
+use ApnaPayment\Settlements\Exceptions\DailyLimitExceededException;
+use ApnaPayment\Settlements\Exceptions\DuplicateTransactionException;
+use ApnaPayment\Settlements\Exceptions\InsufficientAccountBalanceException;
+use ApnaPayment\Settlements\Exceptions\InvalidAccountException;
+use ApnaPayment\Settlements\Exceptions\UnauthorizedAccessException;
+use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Facades\Log;
 
 class Settlement
 {
@@ -53,6 +60,7 @@ class Settlement
      * Create a new settlement
      * @param  SettlementBuilder $builder
      * @return mixed
+     * @throws DailyLimitExceededException,DuplicateTransactionException,InsufficientAccountBalanceException,InvalidAccountException,UnauthorizedAccessException
      */
     public function createSettlement(SettlementBuilder $builder)
     {
@@ -65,11 +73,12 @@ class Settlement
      * Create a new settlement account
      * @param  SettlementAccountBuilder $builder
      * @return mixed
+     *
      */
     public function createSettlementAccount(SettlementAccountBuilder $builder)
     {
         $settlementAccountData = $builder->build();
-        $response = $this->sendRequest('POST', '/settlement-accounts', $settlementAccountData);
+        $response = $this->sendRequest('POST', '/settlements/account', $settlementAccountData);
         return $response;
     }
 
@@ -90,9 +99,10 @@ class Settlement
      * @param  array  $filters
      * @return mixed
      */
-    public function getAllSettlements(array $filters = [])
+    public static function getAllSettlements(array $filters = [])
     {
-        $response = $this->sendRequest('GET', '/settlements', $filters);
+        $instance = new self(config('settlement-sdk.api_token'));
+        $response = $instance->sendRequest('GET', '/settlements', $filters);
         return $response;
     }
 
@@ -100,10 +110,12 @@ class Settlement
      * Get all settlements for a specific settlement account
      * @param  string  $settlementAccountId
      * @return mixed
+     * @throws InvalidAccountException
      */
-    public function getSettlementsByAccount($settlementAccountId)
+    public static function getSettlementsByAccount($settlementAccountId)
     {
-        $response = $this->sendRequest('GET', '/settlements', ['settlement_account_id' => $settlementAccountId]);
+        $instance = new self(config('settlement-sdk.api_token'));
+        $response = $instance->sendRequest('GET', '/settlements/account/'.$settlementAccountId,);
         return $response;
     }
 
@@ -111,12 +123,12 @@ class Settlement
      * Get balance for the current user
      * @return mixed
      */
-    public function getBalance()
+    public static function getBalance()
     {
-        $response = $this->sendRequest('GET', '/balance');
-        return $response;
+        $instance = new self(config('settlement-sdk.api_token'));
+        $response = $instance->sendRequest('GET', '/balance');
+        return $response['balance'];
     }
-
     /**
      * Helper function to check if settlement is pending
      * @return bool
@@ -163,12 +175,11 @@ class Settlement
     private function sendRequest($method, $endpoint, array $data = [])
     {
         $client = new \GuzzleHttp\Client();
-
         // Adding the API token to headers
         $headers = [
             'Authorization' => 'Bearer ' . $this->apiToken,
+            'Accept'=>'application/json'
         ];
-
         // Set data for POST/PUT requests
         $options = [
             'headers' => $headers,
@@ -179,9 +190,29 @@ class Settlement
             unset($options['json']);
             $options['query'] = $data;
         }
+        try {
+            $response = $client->request($method, $this->apiUrl . $endpoint, $options);
+            return json_decode($response->getBody(), true);
 
-        $response = $client->request($method, $this->apiUrl . $endpoint, $options);
+        }
+        catch (GuzzleException $e){
+            if($e->getCode() == 402){
+                throw new InsufficientAccountBalanceException();
+            }
+            else if($e->getCode() == 409){
+                throw new DuplicateTransactionException();
+            }
+            else if($e->getCode() == 403){
+                throw new DailyLimitExceededException();
+            }
+            else if($e->getCode() == 402){
+                throw new UnauthorizedAccessException();
+            }
+            else if ($e->getCode() == 400){
+                throw new InvalidAccountException();
+            }
+        }
 
-        return json_decode($response->getBody(), true);
+
     }
 }
