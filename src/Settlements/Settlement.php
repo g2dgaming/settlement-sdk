@@ -27,7 +27,7 @@ class Settlement
     /**
      * Static method to create a new settlement account
      * @param SettlementAccountBuilder $builder
-     * @return mixed
+     * @return string
      * @throws UnauthorizedAccessException
      * @throws InvalidAccountException
      * @throws ServerException
@@ -49,7 +49,7 @@ class Settlement
     /**
      * Static method to create a new settlement
      * @param  SettlementBuilder $builder
-     * @return mixed
+     * @return string
      * @throws InsufficientAccountBalanceException
      * @throws DuplicateTransactionException
      * @throws DailyLimitExceededException
@@ -77,7 +77,7 @@ class Settlement
     /**
      * Create a new settlement
      * @param SettlementBuilder $builder
-     * @return mixed
+     * @return string
      * @throws InsufficientAccountBalanceException
      * @throws DuplicateTransactionException
      * @throws DailyLimitExceededException
@@ -89,7 +89,7 @@ class Settlement
     {
         try {
             $settlementData = $builder->build();
-            return $this->sendRequest('POST', '/settlements', $settlementData);
+            return $this->sendRequest('POST', '/settlements', $settlementData)["id"];
         }
         catch (ServerException $e){
             if($e->getCode() == 402){
@@ -111,7 +111,7 @@ class Settlement
     /**
      * Create a new settlement account
      * @param SettlementAccountBuilder $builder
-     * @return mixed
+     * @return string
      * @throws UnauthorizedAccessException
      * @throws ServerException
      */
@@ -119,7 +119,7 @@ class Settlement
     {
         try {
             $settlementAccountData = $builder->build();
-            return $this->sendRequest('POST', '/settlements/account', $settlementAccountData);
+            return $this->sendRequest('POST', '/settlements/account', $settlementAccountData)["account"]["id"];
         }
         catch (ServerException $e){
             if ($e->getCode() == 400){
@@ -153,7 +153,7 @@ class Settlement
     public static function getAllSettlements(array $filters = []): mixed
     {
         $instance = new self(config('settlement-sdk.api_token'));
-        return $instance->sendRequest('GET', '/settlements', $filters);
+        return $instance->sendRequest('GET', '/settlements', $filters)["settlements"];
     }
 
     /**
@@ -166,7 +166,15 @@ class Settlement
     public static function getSettlementsByAccount(string $settlementAccountId): mixed
     {
         $instance = new self(config('settlement-sdk.api_token'));
-        return $instance->sendRequest('GET', '/settlements/account/'.$settlementAccountId,);
+        try {
+            return $instance->sendRequest('GET', '/settlements/account/' . $settlementAccountId,)["settlements"];
+        }
+        catch (ServerException $e){
+            if($e->getCode() == 400){
+                throw new InvalidAccountException();
+            }
+            throw $e;
+        }
     }
 
     /**

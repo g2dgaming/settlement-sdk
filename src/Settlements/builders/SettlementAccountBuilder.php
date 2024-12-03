@@ -9,6 +9,8 @@ class SettlementAccountBuilder
     private $accountHolderName;
     private $virtualAddress;
     private $type; // 'vpa' or 'bank_account'
+    public static string $TYPE_VPA='vpa';
+    public static string $TYPE_BANK_ACCOUNT='bank_account';
 
     public function setNickname(string $nickname): self
     {
