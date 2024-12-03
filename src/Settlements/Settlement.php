@@ -18,9 +18,12 @@ class Settlement
     protected $apiUrl;
     protected $data;
 
-    public function __construct($apiToken)
+    public function __construct($apiToken=null)
     {
         $this->apiToken = $apiToken;
+        if(!$apiToken){
+            $this->apiToken=config('settlement-sdk.api_token');
+        }
         $this->apiUrl = config('settlement-sdk.base_url');
     }
 
@@ -71,7 +74,8 @@ class Settlement
     public static function find(string $settlementId): mixed
     {
         $instance = new self(config('settlement-sdk.api_token'));
-        return $instance->getSettlementById($settlementId);
+        $instance->getSettlementById($settlementId);
+        return $instance;
     }
 
     /**

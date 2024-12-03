@@ -94,6 +94,19 @@ $response[8] = Settlement::getBalance();
 
 $response[9] = Settlement::find("test id");
 
+### 8. Get Status of Settlement directly
+
+$response[10] = Settlement::find("id")->isPending();
+
+### 8. Get Status of Settlement from object
+
+$settlement = new Settlement ();
+$settlement->getSettlementById("id");
+$response[11]=$settlement->isPending()?"yes":"no";
+
+
+
+
 ## Methods Overview
 
 - **createAccount(SettlementAccountBuilder $builder)**: Creates a new settlement account using the provided builder.
