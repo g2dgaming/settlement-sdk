@@ -7,6 +7,7 @@ use ApnaPayment\Settlements\Exceptions\DailyLimitExceededException;
 use ApnaPayment\Settlements\Exceptions\DuplicateTransactionException;
 use ApnaPayment\Settlements\Exceptions\InsufficientAccountBalanceException;
 use ApnaPayment\Settlements\Exceptions\InvalidAccountException;
+use ApnaPayment\Settlements\Exceptions\ServerException;
 use ApnaPayment\Settlements\Exceptions\UnauthorizedAccessException;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Log;
@@ -25,21 +26,38 @@ class Settlement
 
     /**
      * Static method to create a new settlement account
-     * @param  SettlementAccountBuilder $builder
+     * @param SettlementAccountBuilder $builder
      * @return mixed
+     * @throws UnauthorizedAccessException
+     * @throws InvalidAccountException
+     * @throws ServerException
      */
-    public static function createAccount(SettlementAccountBuilder $builder)
+    public static function createAccount(SettlementAccountBuilder $builder): mixed
     {
-        $instance = new self(config('settlement-sdk.api_token'));
-        return $instance->createSettlementAccount($builder);
+        try {
+            $instance = new self(config('settlement-sdk.api_token'));
+            return $instance->createSettlementAccount($builder);
+        }
+        catch (ServerException $e){
+            if($e->getCode() == 401){
+                throw new InvalidAccountException();
+            }
+            throw $e;
+        }
     }
 
     /**
      * Static method to create a new settlement
      * @param  SettlementBuilder $builder
      * @return mixed
+     * @throws InsufficientAccountBalanceException
+     * @throws DuplicateTransactionException
+     * @throws DailyLimitExceededException
+     * @throws UnauthorizedAccessException
+     * @throws InvalidAccountException
+     * @throws ServerException
      */
-    public static function createNewSettlement(SettlementBuilder $builder)
+    public static function createNewSettlement(SettlementBuilder $builder): mixed
     {
         $instance = new self(config('settlement-sdk.api_token'));
         return $instance->createSettlement($builder);
@@ -47,10 +65,10 @@ class Settlement
 
     /**
      * Find a settlement by ID
-     * @param  string $settlementId
+     * @param string $settlementId
      * @return mixed
      */
-    public static function find($settlementId)
+    public static function find(string $settlementId): mixed
     {
         $instance = new self(config('settlement-sdk.api_token'));
         return $instance->getSettlementById($settlementId);
@@ -58,36 +76,67 @@ class Settlement
 
     /**
      * Create a new settlement
-     * @param  SettlementBuilder $builder
+     * @param SettlementBuilder $builder
      * @return mixed
-     * @throws DailyLimitExceededException,DuplicateTransactionException,InsufficientAccountBalanceException,InvalidAccountException,UnauthorizedAccessException
+     * @throws InsufficientAccountBalanceException
+     * @throws DuplicateTransactionException
+     * @throws DailyLimitExceededException
+     * @throws UnauthorizedAccessException
+     * @throws InvalidAccountException
+     * @throws ServerException
      */
-    public function createSettlement(SettlementBuilder $builder)
+    public function createSettlement(SettlementBuilder $builder): mixed
     {
-        $settlementData = $builder->build();
-        $response = $this->sendRequest('POST', '/settlements', $settlementData);
-        return $response;
+        try {
+            $settlementData = $builder->build();
+            return $this->sendRequest('POST', '/settlements', $settlementData);
+        }
+        catch (ServerException $e){
+            if($e->getCode() == 402){
+                throw new InsufficientAccountBalanceException();
+            }
+            else if($e->getCode() == 409){
+                throw new DuplicateTransactionException();
+            }
+            else if($e->getCode() == 403){
+                throw new DailyLimitExceededException();
+            }
+            else if ($e->getCode() == 400){
+                throw new InvalidAccountException();
+            }
+            throw $e;
+        }
     }
 
     /**
      * Create a new settlement account
-     * @param  SettlementAccountBuilder $builder
+     * @param SettlementAccountBuilder $builder
      * @return mixed
-     *
+     * @throws UnauthorizedAccessException
+     * @throws ServerException
      */
-    public function createSettlementAccount(SettlementAccountBuilder $builder)
+    public function createSettlementAccount(SettlementAccountBuilder $builder): mixed
     {
-        $settlementAccountData = $builder->build();
-        $response = $this->sendRequest('POST', '/settlements/account', $settlementAccountData);
-        return $response;
+        try {
+            $settlementAccountData = $builder->build();
+            return $this->sendRequest('POST', '/settlements/account', $settlementAccountData);
+        }
+        catch (ServerException $e){
+            if ($e->getCode() == 400){
+                throw new InvalidAccountException();
+            }
+            throw $e;
+        }
     }
 
     /**
      * Get settlement by ID
-     * @param  string  $settlementId
+     * @param string $settlementId
      * @return mixed
+     * @throws UnauthorizedAccessException
+     * @throws ServerException
      */
-    public function getSettlementById($settlementId)
+    public function getSettlementById(string $settlementId): mixed
     {
         $response = $this->sendRequest('GET', "/settlements/{$settlementId}");
         $this->data = $response;  // Save response for status checks
@@ -96,34 +145,36 @@ class Settlement
 
     /**
      * Get all settlements for the user
-     * @param  array  $filters
+     * @param array $filters
      * @return mixed
+     * @throws UnauthorizedAccessException
+     * @throws ServerException
      */
-    public static function getAllSettlements(array $filters = [])
+    public static function getAllSettlements(array $filters = []): mixed
     {
         $instance = new self(config('settlement-sdk.api_token'));
-        $response = $instance->sendRequest('GET', '/settlements', $filters);
-        return $response;
+        return $instance->sendRequest('GET', '/settlements', $filters);
     }
 
     /**
      * Get all settlements for a specific settlement account
-     * @param  string  $settlementAccountId
+     * @param string $settlementAccountId
      * @return mixed
-     * @throws InvalidAccountException
+     * @throws ServerException
+     * @throws UnauthorizedAccessException
      */
-    public static function getSettlementsByAccount($settlementAccountId)
+    public static function getSettlementsByAccount(string $settlementAccountId): mixed
     {
         $instance = new self(config('settlement-sdk.api_token'));
-        $response = $instance->sendRequest('GET', '/settlements/account/'.$settlementAccountId,);
-        return $response;
+        return $instance->sendRequest('GET', '/settlements/account/'.$settlementAccountId,);
     }
 
     /**
      * Get balance for the current user
      * @return mixed
+     * @throws UnauthorizedAccessException|ServerException
      */
-    public static function getBalance()
+    public static function getBalance(): mixed
     {
         $instance = new self(config('settlement-sdk.api_token'));
         $response = $instance->sendRequest('GET', '/balance');
@@ -133,7 +184,7 @@ class Settlement
      * Helper function to check if settlement is pending
      * @return bool
      */
-    public function isPending()
+    public function isPending(): bool
     {
         return $this->data['status'] === 'pending';
     }
@@ -142,7 +193,7 @@ class Settlement
      * Helper function to check if settlement is processing
      * @return bool
      */
-    public function isProcessing()
+    public function isProcessing(): bool
     {
         return $this->data['status'] === 'processing';
     }
@@ -151,7 +202,7 @@ class Settlement
      * Helper function to check if settlement is completed
      * @return bool
      */
-    public function isCompleted()
+    public function isCompleted(): bool
     {
         return $this->data['status'] === 'completed';
     }
@@ -160,19 +211,21 @@ class Settlement
      * Helper function to check if settlement is failed
      * @return bool
      */
-    public function isFailed()
+    public function isFailed(): bool
     {
         return $this->data['status'] === 'failed';
     }
 
     /**
      * Send API request to the server
-     * @param  string  $method
-     * @param  string  $endpoint
-     * @param  array   $data
+     * @param string $method
+     * @param string $endpoint
+     * @param array $data
      * @return mixed
+     * @throws UnauthorizedAccessException
+     * @throws ServerException
      */
-    private function sendRequest($method, $endpoint, array $data = [])
+    private function sendRequest(string $method, string $endpoint, array $data = []): mixed
     {
         $client = new \GuzzleHttp\Client();
         // Adding the API token to headers
@@ -196,23 +249,13 @@ class Settlement
 
         }
         catch (GuzzleException $e){
-            if($e->getCode() == 402){
-                throw new InsufficientAccountBalanceException();
+            if($e->getCode() == 401){
+                throw new UnauthorizedAccessException($e->getMessage(),$e->getCode());
             }
-            else if($e->getCode() == 409){
-                throw new DuplicateTransactionException();
-            }
-            else if($e->getCode() == 403){
-                throw new DailyLimitExceededException();
-            }
-            else if($e->getCode() == 402){
-                throw new UnauthorizedAccessException();
-            }
-            else if ($e->getCode() == 400){
-                throw new InvalidAccountException();
+            else{
+                throw new ServerException($e->getMessage(),$e->getCode());
             }
         }
-
-
     }
 }
+

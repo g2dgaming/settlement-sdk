@@ -5,7 +5,7 @@ use Exception;
 
 
 
-class InvalidAccountException extends Exception
+class InvalidAccountException extends ServerException
 {
     protected $message = 'The provided settlement account is invalid or does not exist.';
     protected $code = 400;
