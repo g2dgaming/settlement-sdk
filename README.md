@@ -1,11 +1,12 @@
 # ApnaPayment Settlement SDK
 
 ## Overview
-This PHP SDK allows you to integrate ApnaPayment's settlement system into your application. You can use it to create settlement accounts, create settlements, check settlement statuses, and more.
+
+The **ApnaPayment Settlement SDK** is a PHP library that simplifies integration with ApnaPayment's settlement system. It provides an easy-to-use interface to create settlement accounts, create settlements, fetch settlement details, and check their statuses in your application.
 
 ## Installation
 
-To use the ApnaPayment Settlement SDK, first install it via Composer:
+To install the ApnaPayment Settlement SDK, use Composer:
 
 composer require apna-payment/settlement-sdk
 
@@ -15,96 +16,83 @@ After installation, publish the configuration file:
 
 php artisan vendor:publish --provider="ApnaPayment\Settlements\SettlementServiceProvider" --tag="config"
 
-This will publish a `settlement-sdk.php` configuration file to the `config` folder of your Laravel project.
+This will create a `settlement-sdk.php` configuration file in the `config` folder of your Laravel project.
 
-In your `.env` file, set your API token:
+Add your API token to your `.env` file:
 
 SETTLEMENT_API_TOKEN=your_api_token_here
 
 ## Usage
 
-### 1. Create a New Settlement Account
+Here’s how you can use the SDK in your application:
 
-To create a new settlement account (either `vpa` or `bank_account`), you can use the `createAccount` method. You need to create a builder object to set the account's details.
+### 1. Create a VPA-based Settlement Account
 
-Example:
+$account1 = new SettlementAccountBuilder();
+$account1->setType(SettlementAccountBuilder::$TYPE_VPA);
+$account1->setVirtualAddress("9451526930@ybl");
+$account1->setNickname("My Temp account test");
+$response[1] = Settlement::createAccount($account1);
 
-use ApnaPayment\Settlements\SettlementAccountBuilder;
+### 2. Create a Bank Account-based Settlement Account
 
-// Create a new settlement account $accountBuilder = new SettlementAccountBuilder(); $accountBuilder->setType('vpa') // or 'bank_account' ->setNickname('MyAccount') ->setVirtualAddress('vpa@domain.com'); // or set account details for 'bank_account'
+$account2 = new SettlementAccountBuilder();
+$account2->setType(SettlementAccountBuilder::$TYPE_BANK_ACCOUNT);
+$account2->setAccountNumber("988231872481874");
+$account2->setAccountHolderName("My Name");
+$account2->setIfscCode("IFSCTEST001");
+$account2->setNickname("My Name");
+$response[2] = Settlement::createAccount($account2); // Returns account ID as string
 
-// Create the account $account = \ApnaPayment\Settlements\Settlement::createAccount($accountBuilder);
+### 3. Fetch All Settlements
 
-// Response: The account object will contain information about the created settlement account
+$response[3] = Settlement::getAllSettlements();
 
+### 4. Fetch Settlements for Specific Accounts
 
+$response[4] = Settlement::getSettlementsByAccount($response[1]);
+$response[5] = Settlement::getSettlementsByAccount($response[2]);
 
----
+### 5. Handle an Invalid Account ID
 
-### 2. Create a New Settlement
+try {
+$response[5] = Settlement::getSettlementsByAccount("InvalidId");
+} catch (\ApnaPayment\Settlements\Exceptions\InvalidAccountException) {
+$response[5] = "Invalid Account";
+}
 
-To create a new settlement, you need to use the `createNewSettlement` method with a `SettlementBuilder` object to specify the settlement's details.
+### 6. Create Settlements
 
-Example:
+$settlementBuilder = new SettlementBuilder();
+$settlementBuilder->setAmount(200.25);
+$settlementBuilder->setRemarks("Agent APS0013 payment");
+$settlementBuilder->setSettlementAccountId($response[1]);
 
-use ApnaPayment\Settlements\SettlementBuilder;
+$settlementBuilder2 = new SettlementBuilder();
+$settlementBuilder2->setAmount(120.25);
+$settlementBuilder2->setRemarks("Agent APS0013 payment");
+$settlementBuilder2->setSettlementAccountId($response[2]);
 
-// Create a new settlement $settlementBuilder = new SettlementBuilder(); $settlementBuilder->setAmount(1000) ->setSettlementAccountId('account_id_here') // The ID of the settlement account ->setRemarks('Settlement for vendor payment');
+$response[6] = Settlement::createNewSettlement($settlementBuilder);
 
-// Create the settlement $settlement = \ApnaPayment\Settlements\Settlement::createNewSettlement($settlementBuilder);
+try {
+$response[7] = (new Settlement(config('settlement-sdk.api_token')))
+->createSettlement($settlementBuilder2);
+} catch (\ApnaPayment\Settlements\Exceptions\DuplicateTransactionException $e) {
+$response[7] = "Duplicate";
+} catch (\ApnaPayment\Settlements\Exceptions\InvalidAccountException $e) {
+$response[7] = "Invalid account";
+} catch (\ApnaPayment\Settlements\Exceptions\DailyLimitExceededException $e) {
+$response[7] = "Limit exceeded";
+}
 
-// Response: The settlement object will contain information about the created settlement.
+### 7. Fetch Account Balance
 
+$response[8] = Settlement::getBalance();
 
----
+### 8. Find a Settlement by ID
 
-### 3. Get All Settlements
-
-To retrieve all settlements associated with the authenticated user, you can call the `allSettlements` method.
-
-Example:
-
-$settlements = \ApnaPayment\Settlements\Settlement::allSettlements();
-
-// Response: An array of settlement objects.
-
-You can also filter settlements by settlement account ID using the `settlementsByAccount` method.
-
-Example:
-$settlements = \ApnaPayment\Settlements\Settlement::settlementsByAccount('account_id_here');
-
-// Response: An array of settlements filtered by the specified account ID.
-
----
-
-### 4. Check Settlement Status
-
-To check the status of a specific settlement, you can use the `find` method followed by status-checking methods such as `isPending()`, `isProcessing()`, `isCompleted()`, and `isFailed()`.
-
-Example:
-
-// Find a settlement by ID $settlement = \ApnaPayment\Settlements\Settlement::find('settlement_id_here');
-
-// Check the status of the settlement if ($settlement->isPending()) { echo "Settlement is pending."; }
-
-if ($settlement->isCompleted()) { echo "Settlement is completed."; }
-
-if ($settlement->isFailed()) { echo "Settlement failed."; }
-
----
-
-### 5. Check Balance
-
-To check the balance of a settlement user, you can use the `checkBalance` method.
-
-Example:
-
-$balance = \ApnaPayment\Settlements\Settlement::checkBalance();
-
-// Response: The balance amount associated with the authenticated user.
-
-
----
+$response[9] = Settlement::find("test id");
 
 ## Methods Overview
 
@@ -118,5 +106,3 @@ $balance = \ApnaPayment\Settlements\Settlement::checkBalance();
 - **isProcessing()**: Checks if the settlement is in the 'processing' state.
 - **isCompleted()**: Checks if the settlement is in the 'completed' state.
 - **isFailed()**: Checks if the settlement has 'failed' status.
-
----
