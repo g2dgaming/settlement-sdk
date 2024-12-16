@@ -167,6 +167,9 @@ class Settlement
             else if($e->getCode() == 422){
                 throw new DuplicationAccountException();
             }
+            else if($e->getCode() == 403){
+                throw new LimitExceededException();
+            }
             throw $e;
         }
     }
