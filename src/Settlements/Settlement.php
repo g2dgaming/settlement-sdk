@@ -143,7 +143,15 @@ class Settlement
      */
     public function removeSettlementAccount(string $accountId): bool
     {
-        return $this->sendRequest('DELETE', "/settlements/account/$accountId")["success"]??false;
+        try {
+            return $this->sendRequest('DELETE', "/settlements/account/$accountId")["success"]??false;
+        }
+        catch (ServerException $e){
+            if ($e->getCode() == 400){
+                throw new InvalidAccountException();
+            }
+            throw $e;
+        }
     }
 
     /**
