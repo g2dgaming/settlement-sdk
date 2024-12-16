@@ -3,14 +3,16 @@ namespace ApnaPayment\Settlements;
 
 use ApnaPayment\Settlements\Builders\SettlementAccountBuilder;
 use ApnaPayment\Settlements\Builders\SettlementBuilder;
-use ApnaPayment\Settlements\Exceptions\DailyLimitExceededException;
+use ApnaPayment\Settlements\Exceptions\AccountNotApprovedException;
+use ApnaPayment\Settlements\Exceptions\DuplicationAccountException;
+use ApnaPayment\Settlements\Exceptions\LimitExceededException;
 use ApnaPayment\Settlements\Exceptions\DuplicateTransactionException;
 use ApnaPayment\Settlements\Exceptions\InsufficientAccountBalanceException;
 use ApnaPayment\Settlements\Exceptions\InvalidAccountException;
 use ApnaPayment\Settlements\Exceptions\ServerException;
 use ApnaPayment\Settlements\Exceptions\UnauthorizedAccessException;
+use App\Models\SettlementAccount;
 use GuzzleHttp\Exception\GuzzleException;
-use Illuminate\Support\Facades\Log;
 
 class Settlement
 {
@@ -55,7 +57,7 @@ class Settlement
      * @return string
      * @throws InsufficientAccountBalanceException
      * @throws DuplicateTransactionException
-     * @throws DailyLimitExceededException
+     * @throws LimitExceededException
      * @throws UnauthorizedAccessException
      * @throws InvalidAccountException
      * @throws ServerException
@@ -66,10 +68,13 @@ class Settlement
         return $instance->createSettlement($builder);
     }
 
+
     /**
      * Find a settlement by ID
      * @param string $settlementId
      * @return mixed
+     * @throws UnauthorizedAccessException
+     * @throws ServerException
      */
     public static function find(string $settlementId): mixed
     {
@@ -84,8 +89,10 @@ class Settlement
      * @return string
      * @throws InsufficientAccountBalanceException
      * @throws DuplicateTransactionException
-     * @throws DailyLimitExceededException
+     * @throws LimitExceededException
      * @throws UnauthorizedAccessException
+     * @throws DuplicationAccountException
+     * @throws AccountNotApprovedException
      * @throws InvalidAccountException
      * @throws ServerException
      */
@@ -103,13 +110,44 @@ class Settlement
                 throw new DuplicateTransactionException();
             }
             else if($e->getCode() == 403){
-                throw new DailyLimitExceededException();
+                throw new LimitExceededException();
+            }
+            else if($e->getCode() == 422){
+                throw new DuplicationAccountException();
+            }
+            else if($e->getCode() == 406){
+                throw new AccountNotApprovedException();
             }
             else if ($e->getCode() == 400){
                 throw new InvalidAccountException();
             }
             throw $e;
         }
+    }
+    /**
+     * Static method to remove settlement account
+     * Return true is account is deleted successfully.
+     * @param string $accountId
+     * @return boolean
+     * @throws ServerException
+     * @throws UnauthorizedAccessException
+     */
+    public static function removeAccount(string $accountId): bool
+    {
+        $instance = new self(config('settlement-sdk.api_token'));
+        return $instance->removeSettlementAccount($accountId);
+    }
+    /**
+     * Method to remove settlement account
+     * Return true is account is deleted successfully.
+     * @param string $accountId
+     * @return boolean
+     * @throws ServerException
+     * @throws UnauthorizedAccessException
+     */
+    public function removeSettlementAccount(string $accountId): bool
+    {
+        return $this->sendRequest('DELETE', "/settlements/account/$accountId")["success"]??false;
     }
 
     /**
