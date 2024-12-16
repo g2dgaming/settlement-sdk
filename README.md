@@ -1,12 +1,11 @@
 # ApnaPayment Settlement SDK
 
 ## Overview
-
-The **ApnaPayment Settlement SDK** is a PHP library that simplifies integration with ApnaPayment's settlement system. It provides an easy-to-use interface to create settlement accounts, create settlements, fetch settlement details, and check their statuses in your application.
+This PHP SDK allows you to integrate ApnaPayment's settlement system into your application. You can use it to create settlement accounts, create settlements, check settlement statuses, and more.
 
 ## Installation
 
-To install the ApnaPayment Settlement SDK, use Composer:
+To use the ApnaPayment Settlement SDK, first install it via Composer:
 
 composer require apna-payment/settlement-sdk
 
@@ -14,95 +13,102 @@ composer require apna-payment/settlement-sdk
 
 After installation, publish the configuration file:
 
-php artisan vendor:publish --provider="ApnaPayment\Settlements\SettlementServiceProvider" --tag="config"
+    php artisan vendor:publish --provider="ApnaPayment\Settlements\SettlementServiceProvider" --tag="config"
 
-This will create a `settlement-sdk.php` configuration file in the `config` folder of your Laravel project.
+This will publish a `settlement-sdk.php` configuration file to the `config` folder of your Laravel project.
 
-Add your API token to your `.env` file:
+In your `.env` file, set your API token:
 
-SETTLEMENT_API_TOKEN=your_api_token_here
+SETTLEMENT_BASE_URL=<base_url_depending_on_env>
+
+SETTLEMENT_API_TOKEN=<your_api_token_here>
 
 ## Usage
 
-Here’s how you can use the SDK in your application:
+#### Create a VPA-based settlement account
 
-### 1. Create a VPA-based Settlement Account
+    $account = (new SettlementAccountBuilder())
+    ->setAccountHolderName("My Name")
+    ->setType(SettlementAccountBuilder::$TYPE_VPA)
+    ->setVirtualAddress("testvpa@hdfcbank")
+    ->setNickname("My Temp account test");
+    $accountId = Settlement::createAccount($account1);
 
-$account1 = new SettlementAccountBuilder();
-$account1->setType(SettlementAccountBuilder::$TYPE_VPA);
-$account1->setVirtualAddress("9451526930@ybl");
-$account1->setNickname("My Temp account test");
-$response[1] = Settlement::createAccount($account1);
+#### Create a bank account-based settlement account
 
-### 2. Create a Bank Account-based Settlement Account
+    $account = (new SettlementAccountBuilder())
+    ->setType(SettlementAccountBuilder::$TYPE_BANK_ACCOUNT)
+    ->setAccountNumber("988231872481874")
+    ->setAccountHolderName("My Name")
+    ->setIfscCode("IFSCTEST001")
+    ->setNickname("My Name");
+    $accountId = Settlement::createAccount($account);
 
-$account2 = new SettlementAccountBuilder();
-$account2->setType(SettlementAccountBuilder::$TYPE_BANK_ACCOUNT);
-$account2->setAccountNumber("988231872481874");
-$account2->setAccountHolderName("My Name");
-$account2->setIfscCode("IFSCTEST001");
-$account2->setNickname("My Name");
-$response[2] = Settlement::createAccount($account2); // Returns account ID as string
 
-### 3. Fetch All Settlements
+#### Fetch all settlements
+    $accounts = Settlement::getAllSettlements();
 
-$response[3] = Settlement::getAllSettlements();
+#### Fetch settlements for specific accounts
+    $accounts = Settlement::getSettlementsByAccount($accountId);
 
-### 4. Fetch Settlements for Specific Accounts
+#### Handle an invalid account ID
+    try {
+        $settlements = Settlement::getSettlementsByAccount("InvalidId");
+    } 
+    catch (\ApnaPayment\Settlements\Exceptions\InvalidAccountException) {
+        $message = "Invalid Account";
+    }
 
-$response[4] = Settlement::getSettlementsByAccount($response[1]);
-$response[5] = Settlement::getSettlementsByAccount($response[2]);
+#### Create settlement
+    $settlementBuilder = (new SettlementBuilder())
+    ->setAmount(200.25)
+    ->setRemarks("Test Payment")
+    ->setSettlementAccountId($accountId);
+    $settlement = Settlement::createNewSettlement($settlementBuilder);
 
-### 5. Handle an Invalid Account ID
 
-try {
-$response[5] = Settlement::getSettlementsByAccount("InvalidId");
-} catch (\ApnaPayment\Settlements\Exceptions\InvalidAccountException) {
-$response[5] = "Invalid Account";
-}
+## Exception Handling
+    try {
+        $settlement = (new Settlement(config('settlement-sdk.api_token')))
+    ->createSettlement($settlementBuilder);
+    } 
+    catch (\ApnaPayment\Settlements\Exceptions\DuplicateTransactionException $e) {
+        $message = "Duplicate";
+    } 
+    catch (\ApnaPayment\Settlements\Exceptions\InvalidAccountException $e) {
+        $message = "Invalid account";
+    } catch (\ApnaPayment\Settlements\Exceptions\DailyLimitExceededException $e) {
+        $message = "Limit exceeded";
+    }
 
-### 6. Create Settlements
+## Fetch account balance
+    $balance = Settlement::getBalance();
 
-$settlementBuilder = new SettlementBuilder();
-$settlementBuilder->setAmount(200.25);
-$settlementBuilder->setRemarks("Agent APS0013 payment");
-$settlementBuilder->setSettlementAccountId($response[1]);
+## Find a settlement by ID
+    $settlement = Settlement::find($settlementId); //settlement id is always returned from creating a settlement (static or from object)
 
-$settlementBuilder2 = new SettlementBuilder();
-$settlementBuilder2->setAmount(120.25);
-$settlementBuilder2->setRemarks("Agent APS0013 payment");
-$settlementBuilder2->setSettlementAccountId($response[2]);
 
-$response[6] = Settlement::createNewSettlement($settlementBuilder);
+## Querying the status of a settlement
+#### Suppose you have the settlementId returned from Settlement::createSettlemen($settlementBuilder)
+    $settlement = new Settlement();
+    // Load the settlement data
 
-try {
-$response[7] = (new Settlement(config('settlement-sdk.api_token')))
-->createSettlement($settlementBuilder2);
-} catch (\ApnaPayment\Settlements\Exceptions\DuplicateTransactionException $e) {
-$response[7] = "Duplicate";
-} catch (\ApnaPayment\Settlements\Exceptions\InvalidAccountException $e) {
-$response[7] = "Invalid account";
-} catch (\ApnaPayment\Settlements\Exceptions\DailyLimitExceededException $e) {
-$response[7] = "Limit exceeded";
-}
+    $settlement->getSettlementById($settlementId)
 
-### 7. Fetch Account Balance
+    // Now the 'data' attribute has status in it
 
-$response[8] = Settlement::getBalance();
-
-### 8. Find a Settlement by ID
-
-$response[9] = Settlement::find("test id");
-
-### 8. Get Status of Settlement directly
-
-$response[10] = Settlement::find("id")->isPending();
-
-### 8. Get Status of Settlement from object
-
-$settlement = new Settlement ();
-$settlement->getSettlementById("id");
-$response[11]=$settlement->isPending()?"yes":"no";
+    if($settlement->isPending()){
+        // Pending
+    }
+    else if($settlement->isProcessing()){
+        // Processing
+    }
+    else if($settlement->isCompleted()){
+        // Completed
+    }
+    else if( $settlement->isFailed()){
+        // Failed 
+    }
 
 
 
@@ -119,3 +125,5 @@ $response[11]=$settlement->isPending()?"yes":"no";
 - **isProcessing()**: Checks if the settlement is in the 'processing' state.
 - **isCompleted()**: Checks if the settlement is in the 'completed' state.
 - **isFailed()**: Checks if the settlement has 'failed' status.
+
+---
