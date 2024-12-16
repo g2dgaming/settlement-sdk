@@ -26,23 +26,32 @@ SETTLEMENT_API_TOKEN=<your_api_token_here>
 ## Usage
 
 #### Create a VPA-based settlement account
-
-    $account = (new SettlementAccountBuilder())
-    ->setAccountHolderName("My Name")
-    ->setType(SettlementAccountBuilder::$TYPE_VPA)
-    ->setVirtualAddress("testvpa@hdfcbank")
-    ->setNickname("My Temp account test");
-    $accountId = Settlement::createAccount($account);
+    try{
+        $account = (new SettlementAccountBuilder())
+        ->setAccountHolderName("My Name")
+        ->setType(SettlementAccountBuilder::$TYPE_VPA)
+        ->setVirtualAddress("testvpa@hdfcbank")
+        ->setNickname("My Temp account test");
+        $accountId = Settlement::createAccount($account);
+    }
+    catch (\ApnaPayment\Settlements\Exceptions\DuplicationAccountException){
+        //Account already exists
+    }
 
 #### Create a bank account-based settlement account
-
-    $account = (new SettlementAccountBuilder())
-    ->setType(SettlementAccountBuilder::$TYPE_BANK_ACCOUNT)
-    ->setAccountNumber("988231872481874")
-    ->setAccountHolderName("My Name")
-    ->setIfscCode("IFSCTEST001")
-    ->setNickname("My Name");
-    $accountId = Settlement::createAccount($account);
+    
+    try{
+        $account = (new SettlementAccountBuilder())
+        ->setType(SettlementAccountBuilder::$TYPE_BANK_ACCOUNT)
+        ->setAccountNumber("988231872481874")
+        ->setAccountHolderName("My Name")
+        ->setIfscCode("IFSCTEST001")
+        ->setNickname("My Name");
+        $accountId = Settlement::createAccount($account);
+    }
+    catch (\ApnaPayment\Settlements\Exceptions\DuplicationAccountException){
+        //Account already exists
+    }
 
 #### Delete a settlement account 
     $is_deleted=Settlement::removeAccount($accountId); //returns boolean
@@ -84,7 +93,7 @@ SETTLEMENT_API_TOKEN=<your_api_token_here>
     } 
     catch (\ApnaPayment\Settlements\Exceptions\InvalidAccountException $e) {
         $message = "Invalid account";
-    } catch (\ApnaPayment\Settlements\Exceptions\DailyLimitExceededException $e) {
+    } catch (\ApnaPayment\Settlements\Exceptions\LimitExceededException $e) {
         $message = "Limit exceeded";
     }
 
