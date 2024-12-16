@@ -91,7 +91,6 @@ class Settlement
      * @throws DuplicateTransactionException
      * @throws LimitExceededException
      * @throws UnauthorizedAccessException
-     * @throws DuplicationAccountException
      * @throws AccountNotApprovedException
      * @throws InvalidAccountException
      * @throws ServerException
@@ -111,9 +110,6 @@ class Settlement
             }
             else if($e->getCode() == 403){
                 throw new LimitExceededException();
-            }
-            else if($e->getCode() == 422){
-                throw new DuplicationAccountException();
             }
             else if($e->getCode() == 406){
                 throw new AccountNotApprovedException();
@@ -155,6 +151,7 @@ class Settlement
      * @param SettlementAccountBuilder $builder
      * @return string
      * @throws UnauthorizedAccessException
+     * @throws DuplicationAccountException
      * @throws ServerException
      */
     public function createSettlementAccount(SettlementAccountBuilder $builder): mixed
@@ -166,6 +163,9 @@ class Settlement
         catch (ServerException $e){
             if ($e->getCode() == 400){
                 throw new InvalidAccountException();
+            }
+            else if($e->getCode() == 422){
+                throw new DuplicationAccountException();
             }
             throw $e;
         }
