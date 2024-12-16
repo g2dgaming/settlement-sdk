@@ -32,7 +32,7 @@ SETTLEMENT_API_TOKEN=<your_api_token_here>
     ->setType(SettlementAccountBuilder::$TYPE_VPA)
     ->setVirtualAddress("testvpa@hdfcbank")
     ->setNickname("My Temp account test");
-    $accountId = Settlement::createAccount($account1);
+    $accountId = Settlement::createAccount($account);
 
 #### Create a bank account-based settlement account
 
