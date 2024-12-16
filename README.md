@@ -34,7 +34,7 @@ SETTLEMENT_API_TOKEN=<your_api_token_here>
         ->setNickname("My Temp account test");
         $accountId = Settlement::createAccount($account);
     }
-    catch (\ApnaPayment\Settlements\Exceptions\DuplicationAccountException){
+    catch (\ApnaPayment\Settlements\Exceptions\DuplicationAccountException $e){
         //Account already exists
     }
 
@@ -49,7 +49,7 @@ SETTLEMENT_API_TOKEN=<your_api_token_here>
         ->setNickname("My Name");
         $accountId = Settlement::createAccount($account);
     }
-    catch (\ApnaPayment\Settlements\Exceptions\DuplicationAccountException){
+    catch (\ApnaPayment\Settlements\Exceptions\DuplicationAccountException $e){
         //Account already exists
     }
 
