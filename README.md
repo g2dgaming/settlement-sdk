@@ -44,7 +44,14 @@ SETTLEMENT_API_TOKEN=<your_api_token_here>
     ->setNickname("My Name");
     $accountId = Settlement::createAccount($account);
 
-
+#### Delete a settlement account 
+    $is_deleted=Settlement::removeAccount($accountId); //returns boolean
+    if($is_deleted){
+        //Account deleted successfully
+    }
+    else{
+    //Something went wrong
+    }
 #### Fetch all settlements
     $accounts = Settlement::getAllSettlements();
 
