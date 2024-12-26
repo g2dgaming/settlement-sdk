@@ -106,7 +106,7 @@ SETTLEMENT_API_TOKEN=<your_api_token_here>
 ## Usage of Webhook Base URL:
 ### Callbacks V1
 #### Note:
-###### All Endpoints when triggered will expect 200-299 http response code, if in the case 500,400 is thrown, the endpoints will be triggered one last time post 10 minutes to the initial attempt.
+###### All Endpoints when triggered will expect 200-299 http response code, even if in the case 500,400 is thrown, there will always be one time updates to balance server load.
 
 After our backend receives a valid web hook url for updates relating to following events:
 1. Settlement status: {'completed','failed'}
