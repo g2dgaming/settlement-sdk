@@ -109,7 +109,7 @@ class Settlement
                 throw new DuplicateTransactionException();
             }
             else if($e->getCode() == 403){
-                throw new LimitExceededException($e->getMessage());
+                throw new LimitExceededException($e->getMessage()==""?$e->getMessage():null);
             }
             else if($e->getCode() == 406){
                 throw new AccountNotApprovedException();
@@ -310,13 +310,14 @@ class Settlement
 
         }
         catch (GuzzleException $e){
-            if($e->getCode() == 401){
-                throw new UnauthorizedAccessException($e->getMessage(),$e->getCode());
+            switch ($e->getCode()) {
+                case 401:
+                    throw new UnauthorizedAccessException($e->getMessage(), 401);
+                default:
+                    throw new ServerException($e->getMessage(), $e->getCode());
             }
-            else{
-                throw new ServerException($e->getMessage(),$e->getCode());
-            }
-        }
+
+
     }
 }
 
