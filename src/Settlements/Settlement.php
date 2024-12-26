@@ -109,7 +109,7 @@ class Settlement
                 throw new DuplicateTransactionException();
             }
             else if($e->getCode() == 403){
-                throw new LimitExceededException();
+                throw new LimitExceededException($e->getMessage());
             }
             else if($e->getCode() == 406){
                 throw new AccountNotApprovedException();
@@ -176,7 +176,7 @@ class Settlement
                 throw new DuplicationAccountException();
             }
             else if($e->getCode() == 403){
-                throw new LimitExceededException();
+                throw new LimitExceededException($e->getMessage());
             }
             throw $e;
         }
