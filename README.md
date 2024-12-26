@@ -103,6 +103,37 @@ SETTLEMENT_API_TOKEN=<your_api_token_here>
 ## Find a settlement by ID
     $settlement = Settlement::find($settlementId); //settlement id is always returned from creating a settlement (static or from object)
 
+## Usage of Webhook Base URL:
+### Callbacks V1
+#### Note:
+###### All Endpoints when triggered will expect 200-299 http response code, if in the case 500,400 is thrown, the endpoints will be triggered one last time post 10 minutes to the initial attempt.
+
+After our backend receives a valid web hook url for updates relating to following events:
+1. Settlement status: {'completed','failed'}
+2. Account Approval Update : { 'approved','rejected' }
+
+### Our Backend triggers an HTTP/HTTPS POST request to following endpoints: 
+#####     1. {base_url}/settlement/status :  
+        {
+            'id':  '<settlement_id>',
+            'status':'completed'
+        }
+#####     2. {base_url}/settlement/status :
+        {
+            'id':  '<settlement_id>',
+            ‘status’:’failed’
+        }
+##### 3. {base_url}/settlement_account/approval :  
+        { 
+            'id':  '<settlement_account_id>',
+            'status':'rejected'
+        }
+##### 4.{base_url}/settlement_account/approval :
+        {
+            'id':  '<settlement_account_id>',
+            'status':'approved'
+        }
+
 
 ## Querying the status of a settlement
 #### Suppose you have the settlementId returned from Settlement::createSettlemen($settlementBuilder)
