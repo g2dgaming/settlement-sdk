@@ -11,7 +11,6 @@ use ApnaPayment\Settlements\Exceptions\InsufficientAccountBalanceException;
 use ApnaPayment\Settlements\Exceptions\InvalidAccountException;
 use ApnaPayment\Settlements\Exceptions\ServerException;
 use ApnaPayment\Settlements\Exceptions\UnauthorizedAccessException;
-use App\Models\SettlementAccount;
 use GuzzleHttp\Exception\GuzzleException;
 
 class Settlement
@@ -316,8 +315,7 @@ class Settlement
                 default:
                     throw new ServerException($e->getMessage(), $e->getCode());
             }
-
-
+        }
     }
 }
 
