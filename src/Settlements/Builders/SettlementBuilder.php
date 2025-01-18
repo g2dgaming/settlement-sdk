@@ -6,6 +6,7 @@ class SettlementBuilder
     private $amount;
     private $remarks;
     private $settlementAccountId;
+    private $txnId;
 
     public function setAmount(float $amount): self
     {
@@ -19,6 +20,11 @@ class SettlementBuilder
         return $this;
     }
 
+    public function setTxnId(string $txnId): self
+    {
+        $this->txnId = $txnId;
+        return $this;
+    }
     public function setSettlementAccountId(string $settlementAccountId): self
     {
         $this->settlementAccountId = $settlementAccountId;
@@ -34,7 +40,8 @@ class SettlementBuilder
         return [
             'amount' => $this->amount,
             'remarks' => $this->remarks,
-            'settlement_account_id' => $this->settlementAccountId
+            'settlement_account_id' => $this->settlementAccountId,
+            'txnId'=>$this->txnId
         ];
     }
 }
