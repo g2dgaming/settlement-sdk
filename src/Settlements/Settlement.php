@@ -71,11 +71,11 @@ class Settlement
     /**
      * Find a settlement by ID
      * @param string $settlementId
-     * @return mixed
+     * @return Settlement
      * @throws UnauthorizedAccessException
      * @throws ServerException
      */
-    public static function find(string $settlementId): mixed
+    public static function find(string $settlementId): Settlement
     {
         $instance = new self(config('settlement-sdk.api_token'));
         $instance->getSettlementById($settlementId);
