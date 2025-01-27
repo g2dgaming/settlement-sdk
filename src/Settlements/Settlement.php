@@ -277,6 +277,15 @@ class Settlement
     }
 
     /**
+     * Helper function to get TxnId
+     * @return string|null
+     */
+    public function getTxnId(): string|null
+    {
+        return $this->data["txnId"]??null;
+    }
+
+    /**
      * Send API request to the server
      * @param string $method
      * @param string $endpoint

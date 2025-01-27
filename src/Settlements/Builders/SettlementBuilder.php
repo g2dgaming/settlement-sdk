@@ -25,10 +25,6 @@ class SettlementBuilder
         $this->txnId = $txnId;
         return $this;
     }
-    public function getTxnId(): string|null
-    {
-        return $this->data["txnId"]??null;
-    }
     public function setSettlementAccountId(string $settlementAccountId): self
     {
         $this->settlementAccountId = $settlementAccountId;
