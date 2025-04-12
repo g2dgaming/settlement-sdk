@@ -10,6 +10,7 @@ use ApnaPayment\Settlements\Exceptions\DuplicateTransactionException;
 use ApnaPayment\Settlements\Exceptions\InsufficientAccountBalanceException;
 use ApnaPayment\Settlements\Exceptions\InvalidAccountException;
 use ApnaPayment\Settlements\Exceptions\ServerException;
+use ApnaPayment\Settlements\Exceptions\SettlementNotFound;
 use ApnaPayment\Settlements\Exceptions\UnauthorizedAccessException;
 use GuzzleHttp\Exception\GuzzleException;
 
@@ -195,6 +196,20 @@ class Settlement
         return $response;
     }
 
+    /**
+     * Get settlement by TxnId
+     * @param string $txnId
+     * @return mixed
+     * @throws UnauthorizedAccessException
+     * @throws ServerException
+     * @throws SettlementNotFound
+     */
+    public function getSettlementFromTxnId(string $txnId): mixed
+    {
+        $response = $this->sendRequest('GET', "/settlements/txnId/{txnId}");
+        $this->data = $response;  // Save response for status checks
+        return $response;
+    }
     /**
      * Get all settlements for the user
      * @param array $filters
