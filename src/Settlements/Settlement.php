@@ -301,6 +301,10 @@ class Settlement
     {
         return $this->data['status'] === 'processing';
     }
+    public function toArray(): array
+    {
+        return $this->data;
+    }
 
     /**
      * Helper function to check if settlement is completed

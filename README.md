@@ -103,6 +103,8 @@ SETTLEMENT_API_TOKEN=<your_api_token_here>
 ## Find a settlement by ID
     try{
         $settlement = Settlement::find($settlementId); //settlement id is always returned from creating a settlement (static or from object)
+        // Now the 'data' attribute has status in it
+        $arrayData=$settlement->toArray();
     }
     catch (\ApnaPayment\Settlements\Exceptions\SettlementNotFound $e){
         //Invalid settlement id
@@ -110,7 +112,10 @@ SETTLEMENT_API_TOKEN=<your_api_token_here>
 
 ## Find a settlement by TxnId
     try{
-    $settlement = Settlement::findByTxnId($txnId);
+        $settlement = Settlement::findByTxnId($txnId);
+        $arrayData=$settlement->toArray();
+        $pending=$settlement->isPending(); //call any instance methods
+
     }
     catch (\ApnaPayment\Settlements\Exceptions\SettlementNotFound $e){
     //Invalid txnId
