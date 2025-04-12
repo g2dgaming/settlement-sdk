@@ -228,7 +228,7 @@ class Settlement
     public function getSettlementFromTxnId(string $txnId): mixed
     {
         try {
-            $response = $this->sendRequest('GET', "/settlements/txnId/{txnId}");
+            $response = $this->sendRequest('GET', "/settlements/txnId/{$txnId}");
             $this->data = $response;  // Save response for status checks
             return $response;
         }
