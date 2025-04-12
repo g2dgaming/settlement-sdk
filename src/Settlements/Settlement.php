@@ -204,9 +204,17 @@ class Settlement
      */
     public function getSettlementById(string $settlementId): mixed
     {
-        $response = $this->sendRequest('GET', "/settlements/{$settlementId}");
-        $this->data = $response;  // Save response for status checks
-        return $response;
+        try {
+            $response = $this->sendRequest('GET', "/settlements/{$settlementId}");
+            $this->data = $response;  // Save response for status checks
+            return $response;
+        }
+        catch (ServerException $e){
+            if ($e->getCode() == 404){
+                throw new SettlementNotFound();
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -219,9 +227,17 @@ class Settlement
      */
     public function getSettlementFromTxnId(string $txnId): mixed
     {
-        $response = $this->sendRequest('GET', "/settlements/txnId/{txnId}");
-        $this->data = $response;  // Save response for status checks
-        return $response;
+        try {
+            $response = $this->sendRequest('GET', "/settlements/txnId/{txnId}");
+            $this->data = $response;  // Save response for status checks
+            return $response;
+        }
+        catch (ServerException $e){
+            if ($e->getCode() == 404){
+                throw new SettlementNotFound();
+            }
+            throw $e;
+        }
     }
     /**
      * Get all settlements for the user
