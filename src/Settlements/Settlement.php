@@ -84,6 +84,19 @@ class Settlement
     }
 
     /**
+     * Find a settlement by TxnId
+     * @param string $txnId
+     * @return Settlement
+     * @throws UnauthorizedAccessException
+     * @throws ServerException
+     */
+    public static function findByTxnId(string $txnId): Settlement
+    {
+        $instance = new self(config('settlement-sdk.api_token'));
+        $instance->getSettlementFromTxnId($txnId);
+        return $instance;
+    }
+    /**
      * Create a new settlement
      * @param SettlementBuilder $builder
      * @return string

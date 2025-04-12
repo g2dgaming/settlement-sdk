@@ -101,8 +101,20 @@ SETTLEMENT_API_TOKEN=<your_api_token_here>
     $balance = Settlement::getBalance();
 
 ## Find a settlement by ID
-    $settlement = Settlement::find($settlementId); //settlement id is always returned from creating a settlement (static or from object)
+    try{
+        $settlement = Settlement::find($settlementId); //settlement id is always returned from creating a settlement (static or from object)
+    }
+    catch (\ApnaPayment\Settlements\Exceptions\SettlementNotFound $e){
+        //Invalid settlement id
+    }
 
+## Find a settlement by TxnId
+    try{
+    $settlement = Settlement::findByTxnId($txnId);
+    }
+    catch (\ApnaPayment\Settlements\Exceptions\SettlementNotFound $e){
+    //Invalid txnId
+    }
 ## Usage of Webhook Base URL:
 ### Callbacks V1
 #### Note:
